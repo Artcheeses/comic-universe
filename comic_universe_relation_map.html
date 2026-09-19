@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>COMIC UNIVERSE — Relationship Map</title>
+<style>
+:root{--bg:#08090d;--panel:#11131a;--text:#f4f4f5;--muted:#8d93a1;--line:#626977;--accent:#b7a1ff;--danger:#ff6b81}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{background:radial-gradient(circle at 50% 45%,#171525 0,#0a0b10 42%,#05060a 100%)}
+.header{position:fixed;z-index:5;top:0;left:0;right:0;height:76px;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#07080ccc,transparent);pointer-events:none}
+.brand{letter-spacing:.22em;font-size:12px;font-weight:700}.sub{color:var(--muted);font-size:11px;letter-spacing:.12em;margin-top:4px}
+.controls{pointer-events:auto;display:flex;gap:8px}.btn{border:1px solid #303440;background:#10121a;color:#dfe1e8;border-radius:10px;padding:9px 12px;cursor:pointer}.btn:hover{border-color:#666c7a}
+.map{position:absolute;inset:0;cursor:grab}.map.dragging{cursor:grabbing}.world{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0}
+svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.edge{stroke:var(--line);stroke-width:2;fill:none;opacity:.75}.edge.love{stroke:#c58cff}.edge.friend{stroke:#79a9ff}.edge.family{stroke:#72d6a0}.edge.enemy{stroke:#ff647d}.edge.unknown{stroke:#777;stroke-dasharray:7 7}
+.edge-label{font-size:11px;fill:#bfc3cc}
+.node{position:absolute;width:92px;height:118px;transform:translate(-50%,-50%);text-align:center;cursor:pointer;user-select:none}
+.avatar{width:68px;height:68px;margin:auto;border-radius:50%;border:2px solid #777b88;background:linear-gradient(145deg,#272a37,#0d0f15);display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 0 0 5px #0a0b10,0 8px 28px #0009;transition:.18s}
+.node:hover .avatar{transform:scale(1.08);border-color:#d4cbff;box-shadow:0 0 0 5px #0a0b10,0 0 24px #a58cff55}
+.name{font-weight:700;font-size:13px;margin-top:10px}.tag{font-size:10px;color:var(--muted);margin-top:4px}
+.lock{font-size:9px;color:#b5bac6;margin-top:5px;letter-spacing:.08em}
+.center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}.center .seal{font-size:12px;letter-spacing:.35em;color:#8f96a7}.center h1{font-family:Georgia,serif;font-size:26px;letter-spacing:.08em;margin:10px 0 0}.center p{font-size:11px;color:#777e8d;letter-spacing:.15em}
+.overlay{position:fixed;inset:0;background:#0009;backdrop-filter:blur(7px);display:none;z-index:20}.overlay.show{display:block}
+.modal{position:absolute;right:0;top:0;height:100%;width:min(460px,100%);background:linear-gradient(180deg,#141620,#0b0c11);border-left:1px solid #303440;padding:30px;overflow:auto;box-shadow:-25px 0 80px #0008}
+.close{position:absolute;right:20px;top:18px;background:none;border:0;color:#aaa;font-size:25px;cursor:pointer}
+.filecode{font-size:10px;color:#8d93a1;letter-spacing:.2em}.portrait{width:150px;height:150px;border-radius:18px;margin:26px 0 18px;background:linear-gradient(145deg,#302a49,#11121a);display:flex;align-items:center;justify-content:center;font-size:54px;border:1px solid #454a59}
+.modal h2{font-family:Georgia,serif;font-size:32px;margin:0 0 8px}.quote{color:#aaaeb8;font-family:Georgia,serif;font-style:italic;line-height:1.7}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:24px 0}.info{background:#10121a;border:1px solid #292d38;border-radius:10px;padding:12px}.info small{color:#737988;display:block;margin-bottom:5px}.relations{margin-top:28px}.relation{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #242732;cursor:pointer}.relation:hover{color:#d5ccff}.relation span:last-child{color:#9298a7;font-size:11px}.locked{color:#777}
+.password{position:fixed;z-index:30;inset:0;display:none;align-items:center;justify-content:center;background:#030407cc;backdrop-filter:blur(10px)}.password.show{display:flex}.box{width:min(380px,90%);background:#11131a;border:1px solid #373b48;border-radius:18px;padding:30px;box-shadow:0 25px 100px #000b;text-align:center}.box .mini{font-size:10px;letter-spacing:.25em;color:#777f90}.box h3{font-family:Georgia,serif;font-size:27px;margin:12px 0}.box p{color:#888f9f;font-size:12px}.input{width:100%;padding:13px 14px;background:#090a0f;color:white;border:1px solid #383d49;border-radius:9px;outline:none;text-align:center;letter-spacing:.18em}.input:focus{border-color:#aaa0df}.enter{margin-top:10px;width:100%;padding:12px;border:0;border-radius:9px;background:#d9d3ff;color:#17131f;font-weight:800;cursor:pointer}.error{height:18px;color:var(--danger);font-size:11px;margin-top:9px}
+.hint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:6;color:#777e8c;font-size:10px;letter-spacing:.12em;pointer-events:none}
+@media(max-width:600px){.header{padding:16px}.modal{padding:24px}.center{display:none}.node{width:82px}.avatar{width:60px;height:60px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><div class="brand">COMIC UNIVERSE</div><div class="sub">RELATION MAP · CHARACTER ARCHIVE</div></div>
+  <div class="controls"><button class="btn" id="reset">RESET</button><button class="btn" id="zoomOut">−</button><button class="btn" id="zoomIn">+</button></div>
+</div>
+
+<div class="map" id="map">
+  <div class="world" id="world">
+    <svg viewBox="0 0 1000 700" preserveAspectRatio="none">
+      <line class="edge family" x1="500" y1="260" x2="350" y2="390"/>
+      <line class="edge friend" x1="350" y1="390" x2="180" y2="500"/>
+      <line class="edge love" x1="350" y1="390" x2="650" y2="410"/>
+      <line class="edge enemy" x1="650" y1="410" x2="820" y2="300"/>
+      <line class="edge unknown" x1="650" y1="410" x2="810" y2="545"/>
+      <text class="edge-label" x="410" y="315">兄妹</text>
+      <text class="edge-label" x="245" y="450">好友</text>
+      <text class="edge-label" x="490" y="385">青梅 / 暧昧</text>
+      <text class="edge-label" x="730" y="345">敌对</text>
+      <text class="edge-label" x="735" y="500">未知</text>
+    </svg>
+
+    <div class="node" style="left:50%;top:37%" data-id="guining"><div class="avatar">👤</div><div class="name">顾宁</div><div class="tag">FILE 003</div><div class="lock">🔐 RESTRICTED</div></div>
+    <div class="node" style="left:35%;top:56%" data-id="guyan"><div class="avatar">👤</div><div class="name">顾言</div><div class="tag">FILE 002</div><div class="lock">🔐 RESTRICTED</div></div>
+    <div class="node" style="left:18%;top:72%" data-id="suhe"><div class="avatar">👤</div><div class="name">苏禾</div><div class="tag">FILE 005</div><div class="lock">🔐 RESTRICTED</div></div>
+    <div class="node" style="left:65%;top:59%" data-id="shenyu"><div class="avatar">👤</div><div class="name">沈予</div><div class="tag">FILE 004</div><div class="lock">🔐 RESTRICTED</div></div>
+    <div class="node" style="left:82%;top:43%" data-id="linxi"><div class="avatar">👤</div><div class="name">林夕</div><div class="tag">FILE 001</div><div class="lock">🔐 RESTRICTED</div></div>
+    <div class="node" style="left:81%;top:78%" data-id="unknown"><div class="avatar">?</div><div class="name">？？？</div><div class="tag">UNKNOWN</div><div class="lock">🔒 SECRET</div></div>
+
+    <div class="center"><div class="seal">THE STORY IS CONNECTED</div><h1>人物关系档案</h1><p>CLICK A CHARACTER TO ACCESS FILE</p></div>
+  </div>
+</div>
+<div class="hint">DRAG TO MOVE · SCROLL / ± TO ZOOM · CLICK CHARACTER</div>
+
+<div class="overlay" id="overlay"><div class="modal">
+  <button class="close" id="close">×</button>
+  <div class="filecode" id="mCode"></div>
+  <div class="portrait" id="mPortrait">👤</div>
+  <h2 id="mName"></h2><div class="quote" id="mQuote"></div>
+  <div class="grid" id="mGrid"></div>
+  <div class="relations"><div class="filecode">RELATIONSHIPS</div><div id="mRelations"></div></div>
+</div></div>
+
+<div class="password" id="password">
+  <div class="box">
+    <div class="mini">ACCESS RESTRICTED</div>
+    <h3 id="pTitle">PERSON FILE</h3>
+    <p>请输入档案密码以查看完整人物资料。</p>
+    <input class="input" id="pInput" type="password" autocomplete="off" placeholder="PASSWORD">
+    <button class="enter" id="pEnter">ACCESS FILE</button>
+    <div class="error" id="pError"></div>
+  </div>
+</div>
+
+<script>
+const files={
+ linxi:{name:"林夕",code:"FILE 001",quote:"「我只是想知道，那个夏天到底发生了什么。」",emoji:"🌙",password:"0423",info:[["年龄","17"],["身份","高中生"],["状态","ACTIVE"],["秘密","🔒 2 LOCKED"]],relations:[["顾言","💙 青梅竹马","guyan"],["沈予","💜 暧昧","shenyu"],["？？？","❓ 未知","unknown"]]},
+ guyan:{name:"顾言",code:"FILE 002",quote:"「有些事，我宁愿你永远不知道。」",emoji:"🖤",password:"0717",info:[["年龄","18"],["身份","高中生"],["状态","ACTIVE"],["秘密","🔒 3 LOCKED"]],relations:[["林夕","💙 青梅竹马","linxi"],["顾宁","💚 兄妹","guining"],["沈予","🖤 敌对","shenyu"]]},
+ guining:{name:"顾宁",code:"FILE 003",quote:"「你看到的，未必是真的。」",emoji:"🌫️",password:"2009",info:[["年龄","16"],["身份","学生"],["状态","ACTIVE"],["秘密","🔒 1 LOCKED"]],relations:[["顾言","💚 兄妹","guyan"],["苏禾","🤍 旧识","suhe"]]},
+ shenyu:{name:"沈予",code:"FILE 004",quote:"「我从来没有说过，我是个好人。」",emoji:"🥀",password:"0919",info:[["年龄","18"],["身份","？？？"],["状态","ACTIVE"],["秘密","🔐 SECRET"]],relations:[["林夕","💜 暧昧","linxi"],["顾言","🖤 敌对","guyan"],["苏禾","🔒 LOCKED","suhe"]]},
+ suhe:{name:"苏禾",code:"FILE 005",quote:"「如果我告诉你真相，你还会相信我吗？」",emoji:"🦋",password:"1122",info:[["年龄","17"],["身份","学生"],["状态","UNKNOWN"],["秘密","🔒 4 LOCKED"]],relations:[["顾言","💙 好友","guyan"],["顾宁","🤍 旧识","guining"],["沈予","🔒 LOCKED","shenyu"]]},
+ unknown:{name:"？？？",code:"SECRET FILE",quote:"ACCESS DENIED.",emoji:"?",password:"final",info:[["身份","UNKNOWN"],["状态","LOCKED"],["记录","████████"],["权限","FINAL"]],relations:[]}
+};
+let current=null;
+const map=document.getElementById("map"),world=document.getElementById("world");let scale=1,tx=0,ty=0,drag=false,sx=0,sy=0,ox=0,oy=0;
+function transform(){world.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;}
+map.addEventListener("pointerdown",e=>{if(e.target.closest(".node,.btn"))return;drag=true;map.classList.add("dragging");sx=e.clientX;sy=e.clientY;ox=tx;oy=ty;map.setPointerCapture(e.pointerId)});
+map.addEventListener("pointermove",e=>{if(!drag)return;tx=ox+e.clientX-sx;ty=oy+e.clientY-sy;transform()});
+map.addEventListener("pointerup",()=>{drag=false;map.classList.remove("dragging")});
+map.addEventListener("wheel",e=>{e.preventDefault();scale=Math.max(.65,Math.min(1.55,scale*(e.deltaY<0?1.08:.92)));transform()},{passive:false});
+document.getElementById("zoomIn").onclick=()=>{scale=Math.min(1.55,scale+0.1);transform()};
+document.getElementById("zoomOut").onclick=()=>{scale=Math.max(.65,scale-0.1);transform()};
+document.getElementById("reset").onclick=()=>{scale=1;tx=0;ty=0;transform()};
+document.querySelectorAll(".node").forEach(n=>n.onclick=()=>openPassword(n.dataset.id));
+function openPassword(id){current=id;document.getElementById("pTitle").textContent=files[id].code+" · "+files[id].name;document.getElementById("pInput").value="";document.getElementById("pError").textContent="";document.getElementById("password").classList.add("show");setTimeout(()=>document.getElementById("pInput").focus(),50)}
+function enter(){if(!current)return;let v=document.getElementById("pInput").value;if(v===files[current].password){document.getElementById("password").classList.remove("show");openFile(current)}else document.getElementById("pError").textContent="ACCESS DENIED · PASSWORD INCORRECT"}
+document.getElementById("pEnter").onclick=enter;document.getElementById("pInput").addEventListener("keydown",e=>{if(e.key==="Enter")enter();if(e.key==="Escape")document.getElementById("password").classList.remove("show")});
+document.getElementById("close").onclick=()=>document.getElementById("overlay").classList.remove("show");
+document.getElementById("overlay").addEventListener("click",e=>{if(e.target.id==="overlay")e.currentTarget.classList.remove("show")});
+function openFile(id){let f=files[id];document.getElementById("mCode").textContent=f.code;document.getElementById("mPortrait").textContent=f.emoji;document.getElementById("mName").textContent=f.name;document.getElementById("mQuote").textContent=f.quote;document.getElementById("mGrid").innerHTML=f.info.map(x=>`<div class="info"><small>${x[0]}</small>${x[1]}</div>`).join("");document.getElementById("mRelations").innerHTML=f.relations.map(r=>`<div class="relation" data-id="${r[2]}"><span>${r[0]}</span><span>${r[1]}</span></div>`).join("")||"<div class='locked'>NO RELATION DATA</div>";document.querySelectorAll(".relation").forEach(x=>x.onclick=()=>openPassword(x.dataset.id));document.getElementById("overlay").classList.add("show")}
+</script>
+</body>
+</html>
